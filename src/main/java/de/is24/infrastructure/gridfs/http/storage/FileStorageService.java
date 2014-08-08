@@ -1,17 +1,13 @@
 package de.is24.infrastructure.gridfs.http.storage;
 
-
 import static de.is24.infrastructure.gridfs.http.security.Permission.HAS_DESCRIPTOR_READ_PERMISSION;
 import de.is24.util.monitoring.spring.TimeMeasurement;
-import org.springframework.data.mongodb.tx.MongoTx;
 import org.springframework.security.access.prepost.PreAuthorize;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
-
 import org.springframework.security.access.prepost.PreAuthorize;
 
 import de.is24.infrastructure.gridfs.http.gridfs.BoundedGridFsResource;
@@ -25,8 +21,8 @@ public interface FileStorageService {
   @TimeMeasurement
   FileStorageItem insecureFindBy(FileDescriptor descriptor);
 
-  @TimeMeasurement
   @PreAuthorize(HAS_DESCRIPTOR_READ_PERMISSION)
+  @TimeMeasurement
   FileStorageItem getFileBy(FileDescriptor descriptor);
 
   public void delete(FileStorageItem storageItem);
@@ -37,13 +33,12 @@ public interface FileStorageService {
 
   public List<FileStorageItem> getAllRpms(String repo);
 
-  @MongoTx
   FileStorageItem storeFile(InputStream inputStream, FileDescriptor descriptor);
 
-  @MongoTx
   FileStorageItem storeFile(InputStream inputStream, FileDescriptor descriptor, boolean allowOverride);
 
-  public UploadResult storeSqliteFileCompressedWithChecksumName(String reponame, File metadataFile, String name) throws IOException;
+  UploadResult storeSqliteFileCompressedWithChecksumName(String reponame, File metadataFile, String name)
+                                                  throws IOException;
 
   public UploadResult storeXmlFileCompressedWithChecksumname(String reponame, File xmlFile, String name) throws IOException;
 
@@ -68,6 +63,5 @@ public interface FileStorageService {
   BoundedGridFsResource getResource(FileDescriptor descriptor, long startPos) throws IOException;
 
   @PreAuthorize(HAS_DESCRIPTOR_READ_PERMISSION)
-  BoundedGridFsResource getResource(FileDescriptor descriptor, long startPos, long size)
-      throws IOException;
+  BoundedGridFsResource getResource(FileDescriptor descriptor, long startPos, long size) throws IOException;
 }
