@@ -184,11 +184,13 @@ public class GridFsFileStorageService implements FileStorageService {
   }
 
   @Override
+  @MongoTx
   public FileStorageItem storeFile(InputStream inputStream, FileDescriptor descriptor) {
     return storeFile(inputStream, descriptor, false);
   }
 
   @Override
+  @MongoTx
   public FileStorageItem storeFile(InputStream inputStream, FileDescriptor descriptor, boolean allowOverride) {
     FileStorageItem existingDbFile = findBy(descriptor);
     if (existingDbFile != null && !allowOverride) {
