@@ -2,6 +2,9 @@ package de.is24.infrastructure.gridfs.http.storage;
 
 
 import static de.is24.infrastructure.gridfs.http.security.Permission.HAS_DESCRIPTOR_READ_PERMISSION;
+import de.is24.util.monitoring.spring.TimeMeasurement;
+import org.springframework.data.mongodb.tx.MongoTx;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,9 +37,11 @@ public interface FileStorageService {
 
   public List<FileStorageItem> getAllRpms(String repo);
 
-  public FileStorageItem storeFile(InputStream inputStream, FileDescriptor descriptor);
+  @MongoTx
+  FileStorageItem storeFile(InputStream inputStream, FileDescriptor descriptor);
 
-  public FileStorageItem storeFile(InputStream inputStream, FileDescriptor descriptor, boolean allowOverride);
+  @MongoTx
+  FileStorageItem storeFile(InputStream inputStream, FileDescriptor descriptor, boolean allowOverride);
 
   public UploadResult storeSqliteFileCompressedWithChecksumName(String reponame, File metadataFile, String name) throws IOException;
 
