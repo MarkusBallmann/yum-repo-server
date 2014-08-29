@@ -1,14 +1,14 @@
 package de.is24.infrastructure.gridfs.http.metadata;
 
-import de.is24.infrastructure.gridfs.http.domain.RepoEntry;
-import de.is24.infrastructure.gridfs.http.domain.RepoType;
-import de.is24.infrastructure.gridfs.http.gridfs.StorageService;
-import de.is24.infrastructure.gridfs.http.jaxb.Data;
-import de.is24.infrastructure.gridfs.http.metadata.generation.RepoMdGenerator;
-import de.is24.infrastructure.gridfs.http.repos.RepoCleaner;
-import de.is24.infrastructure.gridfs.http.repos.RepoService;
-import de.is24.infrastructure.gridfs.http.storage.FileStorageService;
-import de.is24.util.monitoring.InApplicationMonitor;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.when;
+
+import java.io.File;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -16,14 +16,16 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
-import java.io.File;
-
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
-import static org.mockito.Mockito.when;
+import de.is24.infrastructure.gridfs.http.domain.RepoEntry;
+import de.is24.infrastructure.gridfs.http.domain.RepoType;
+import de.is24.infrastructure.gridfs.http.gridfs.StorageService;
+import de.is24.infrastructure.gridfs.http.jaxb.Data;
+import de.is24.infrastructure.gridfs.http.metadata.generation.PrimaryXmlGenerator;
+import de.is24.infrastructure.gridfs.http.metadata.generation.RepoMdGenerator;
+import de.is24.infrastructure.gridfs.http.repos.RepoCleaner;
+import de.is24.infrastructure.gridfs.http.repos.RepoService;
+import de.is24.infrastructure.gridfs.http.storage.FileStorageService;
+import de.is24.util.monitoring.InApplicationMonitor;
 
 
 @RunWith(MockitoJUnitRunner.class)
@@ -48,6 +50,8 @@ public class MetadataServiceTest {
   @Mock
   private RepoMdGenerator repoMdGenerator;
   @Mock
+  private PrimaryXmlGenerator primaryXmlGenerator;
+  @Mock
   private InApplicationMonitor inApplicationMonitor;
   @Mock
   private FileStorageService fileStorageService;
@@ -57,6 +61,7 @@ public class MetadataServiceTest {
   @Before
   public void setup() throws Exception {
     when(storageService.storeRepodataDbBz2(anyString(), any(File.class), anyString())).thenReturn(new Data());
+    when(storageService.storeRepodataXmlGz(anyString(), any(File.class), anyString())).thenReturn(new Data());
 
     this.reponame = "any-reponame";
 

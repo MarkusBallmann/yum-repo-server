@@ -1,50 +1,5 @@
 package de.is24.infrastructure.gridfs.http.gridfs;
 
-import ch.lambdaj.function.convert.Converter;
-import com.mongodb.BasicDBObject;
-import com.mongodb.DBCollection;
-import com.mongodb.DBObject;
-import com.mongodb.gridfs.GridFS;
-import com.mongodb.gridfs.GridFSDBFile;
-import com.mongodb.gridfs.GridFSFile;
-import com.mongodb.gridfs.GridFSInputFile;
-import com.mongodb.gridfs.GridFSUtil;
-import de.is24.infrastructure.gridfs.http.exception.BadRangeRequestException;
-import de.is24.infrastructure.gridfs.http.exception.GridFSFileAlreadyExistsException;
-import de.is24.infrastructure.gridfs.http.exception.GridFSFileNotFoundException;
-import de.is24.infrastructure.gridfs.http.storage.FileDescriptor;
-import de.is24.infrastructure.gridfs.http.storage.FileStorageItem;
-import de.is24.infrastructure.gridfs.http.storage.FileStorageService;
-import de.is24.infrastructure.gridfs.http.storage.UploadResult;
-import de.is24.util.monitoring.spring.TimeMeasurement;
-import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
-import org.bson.types.ObjectId;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.core.query.Criteria;
-import org.springframework.data.mongodb.gridfs.GridFsOperations;
-import org.springframework.data.mongodb.tx.MongoTx;
-import org.springframework.http.MediaType;
-import org.springframework.jmx.export.annotation.ManagedOperation;
-import org.springframework.jmx.export.annotation.ManagedResource;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Service;
-import org.springframework.util.Assert;
-
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.security.DigestInputStream;
-import java.security.DigestOutputStream;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-
 import static ch.lambdaj.Lambda.convert;
 import static com.mongodb.gridfs.GridFSUtil.mergeMetaData;
 import static com.mongodb.gridfs.GridFSUtil.remove;
@@ -73,6 +28,54 @@ import static org.springframework.data.mongodb.gridfs.GridFsCriteria.whereMetaDa
 import static org.springframework.http.MediaType.APPLICATION_OCTET_STREAM_VALUE;
 import static org.springframework.http.MediaType.APPLICATION_XML_VALUE;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.security.DigestInputStream;
+import java.security.DigestOutputStream;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+
+import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import org.bson.types.ObjectId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.query.Criteria;
+import org.springframework.data.mongodb.gridfs.GridFsOperations;
+import org.springframework.data.mongodb.tx.MongoTx;
+import org.springframework.http.MediaType;
+import org.springframework.jmx.export.annotation.ManagedOperation;
+import org.springframework.jmx.export.annotation.ManagedResource;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Service;
+import org.springframework.util.Assert;
+
+import ch.lambdaj.function.convert.Converter;
+
+import com.mongodb.BasicDBObject;
+import com.mongodb.DBCollection;
+import com.mongodb.DBObject;
+import com.mongodb.gridfs.GridFS;
+import com.mongodb.gridfs.GridFSDBFile;
+import com.mongodb.gridfs.GridFSFile;
+import com.mongodb.gridfs.GridFSInputFile;
+import com.mongodb.gridfs.GridFSUtil;
+
+import de.is24.infrastructure.gridfs.http.exception.BadRangeRequestException;
+import de.is24.infrastructure.gridfs.http.exception.GridFSFileAlreadyExistsException;
+import de.is24.infrastructure.gridfs.http.exception.GridFSFileNotFoundException;
+import de.is24.infrastructure.gridfs.http.storage.FileDescriptor;
+import de.is24.infrastructure.gridfs.http.storage.FileStorageItem;
+import de.is24.infrastructure.gridfs.http.storage.FileStorageService;
+import de.is24.infrastructure.gridfs.http.storage.UploadResult;
+import de.is24.util.monitoring.spring.TimeMeasurement;
+
 @ManagedResource
 @Service
 public class GridFsFileStorageService implements FileStorageService {
@@ -80,6 +83,7 @@ public class GridFsFileStorageService implements FileStorageService {
   public static final String CONTENT_TYPE_APPLICATION_X_RPM = "application/x-rpm";
   public static final String CONTENT_TYPE_APPLICATION_X_GPG = "application/x-gpg";
   private static final String BZ2_CONTENT_TYPE = new MediaType("application", "x-bzip2").toString();
+  private static final String GZ_CONTENT_TYPE = new MediaType("application","gzip").toString();
   private static final String ENDS_WITH_RPM_REGEX = ".*\\.rpm$";
   private static final int MB = 1024 * 1024;
   private static final int FIVE_MB = 5 * MB;
@@ -217,6 +221,48 @@ public class GridFsFileStorageService implements FileStorageService {
     }
 
     return APPLICATION_OCTET_STREAM_VALUE;
+  }
+
+  @Override
+  public UploadResult storeXmlFileCompressedWithChecksumname(String reponame, File xmlFile, String name) throws IOException {
+      FileDescriptor descriptor = new FileDescriptor(reponame, ARCH_KEY_REPO_DATA, name);
+      GridFSInputFile inputFile = gridFs.createFile();
+      inputFile.setContentType(GZ_CONTENT_TYPE);
+      InputStream fileInputStream = new BufferedInputStream(new FileInputStream(xmlFile));
+      DigestInputStream uncompressedDigestInputStream = new DigestInputStream(fileInputStream, getSha256Digest());
+      DigestOutputStream compressedDigestOutputStream;
+      try {
+          OutputStream gridFsOutputStream = inputFile.getOutputStream();
+          compressedDigestOutputStream = new DigestOutputStream(gridFsOutputStream, getSha256Digest());
+
+          BZip2CompressorOutputStream bzip2OutputStream = new BZip2CompressorOutputStream(compressedDigestOutputStream);
+
+          copy(uncompressedDigestInputStream, bzip2OutputStream);
+          bzip2OutputStream.close();
+        } finally {
+          uncompressedDigestInputStream.close();
+        }
+
+        String compressedChecksum = encodeHexString(compressedDigestOutputStream.getMessageDigest().digest());
+        String uncompressedChecksum = encodeHexString(uncompressedDigestInputStream.getMessageDigest().digest());
+        String finalFilename = reponame + "/" + createRepoMdLocationforXml(name, compressedChecksum);
+
+        gridFs.remove(finalFilename);
+
+        DBObject metaData = createBasicMetaDataObject(descriptor, compressedChecksum);
+
+        inputFile.setMetaData(metaData);
+        inputFile.put(FILENAME_KEY, finalFilename);
+        inputFile.getOutputStream().close();
+
+        UploadResult uploadResult = new UploadResult();
+        uploadResult.setLocation(finalFilename);
+        uploadResult.setUploadDate(inputFile.getUploadDate());
+        uploadResult.setCompressedSize(inputFile.getLength());
+        uploadResult.setCompressedChecksum(compressedChecksum);
+        uploadResult.setUncompressedSize(xmlFile.length());
+        uploadResult.setUncompressedChecksum(uncompressedChecksum);
+        return uploadResult;
   }
 
   @Override
@@ -375,6 +421,10 @@ public class GridFsFileStorageService implements FileStorageService {
   private String createRepoMdLocation(String name, String checksum) {
     return ARCH_KEY_REPO_DATA + "/" + name + "-" + checksum + ".sqlite.bz2";
   }
+
+  private String createRepoMdLocationforXml(String name, String checksum) {
+      return ARCH_KEY_REPO_DATA + "/" + name + "-" + checksum + ".xml.gz";
+    }
 
   private DBObject createBasicMetaDataObject(FileDescriptor descriptor, String sha256Hash) {
     DBObject metaData = new BasicDBObject();

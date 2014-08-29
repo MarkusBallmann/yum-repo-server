@@ -1,21 +1,5 @@
 package de.is24.infrastructure.gridfs.http.mongo;
 
-import com.mongodb.Mongo;
-import com.mongodb.gridfs.GridFS;
-import de.is24.infrastructure.gridfs.http.gridfs.GridFsFileStorageService;
-import de.is24.infrastructure.gridfs.http.gridfs.StorageService;
-import de.is24.infrastructure.gridfs.http.metadata.MetadataService;
-import de.is24.infrastructure.gridfs.http.metadata.RepoEntriesRepository;
-import de.is24.infrastructure.gridfs.http.metadata.YumEntriesHashCalculator;
-import de.is24.infrastructure.gridfs.http.metadata.YumEntriesRepository;
-import de.is24.infrastructure.gridfs.http.metadata.YumEntriesRepositoryImpl;
-import de.is24.infrastructure.gridfs.http.metadata.generation.RepoMdGenerator;
-import de.is24.infrastructure.gridfs.http.repos.RepoCleaner;
-import de.is24.infrastructure.gridfs.http.repos.RepoService;
-import de.is24.infrastructure.gridfs.http.security.PGPSigner;
-import de.is24.infrastructure.gridfs.http.storage.FileStorageService;
-import de.is24.infrastructure.gridfs.http.storage.StorageTestUtils;
-import de.is24.util.monitoring.InApplicationMonitor;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.core.SimpleMongoDbFactory;
@@ -23,6 +7,25 @@ import org.springframework.data.mongodb.core.convert.MappingMongoConverter;
 import org.springframework.data.mongodb.core.mapping.MongoMappingContext;
 import org.springframework.data.mongodb.gridfs.GridFsTemplate;
 import org.springframework.data.mongodb.repository.support.MongoRepositoryFactory;
+
+import com.mongodb.Mongo;
+import com.mongodb.gridfs.GridFS;
+
+import de.is24.infrastructure.gridfs.http.gridfs.GridFsFileStorageService;
+import de.is24.infrastructure.gridfs.http.gridfs.StorageService;
+import de.is24.infrastructure.gridfs.http.metadata.MetadataService;
+import de.is24.infrastructure.gridfs.http.metadata.RepoEntriesRepository;
+import de.is24.infrastructure.gridfs.http.metadata.YumEntriesHashCalculator;
+import de.is24.infrastructure.gridfs.http.metadata.YumEntriesRepository;
+import de.is24.infrastructure.gridfs.http.metadata.YumEntriesRepositoryImpl;
+import de.is24.infrastructure.gridfs.http.metadata.generation.PrimaryXmlGenerator;
+import de.is24.infrastructure.gridfs.http.metadata.generation.RepoMdGenerator;
+import de.is24.infrastructure.gridfs.http.repos.RepoCleaner;
+import de.is24.infrastructure.gridfs.http.repos.RepoService;
+import de.is24.infrastructure.gridfs.http.security.PGPSigner;
+import de.is24.infrastructure.gridfs.http.storage.FileStorageService;
+import de.is24.infrastructure.gridfs.http.storage.StorageTestUtils;
+import de.is24.util.monitoring.InApplicationMonitor;
 
 
 /**
@@ -43,6 +46,7 @@ public class IntegrationTestContext extends MongoTestContext {
   private RepoCleaner repoCleaner;
 
   private RepoMdGenerator repoMdGenerator;
+  private PrimaryXmlGenerator primaryXmlGenerator;
 
   private MetadataService metadataService;
   private YumEntriesHashCalculator entriesHashCalculator;
@@ -124,6 +128,13 @@ public class IntegrationTestContext extends MongoTestContext {
     return repoMdGenerator;
   }
 
+  public PrimaryXmlGenerator primaryXmlGenerator(){
+      if (primaryXmlGenerator == null){
+          primaryXmlGenerator = new PrimaryXmlGenerator(fileStorageService(),"primary");
+      }
+      return primaryXmlGenerator;
+  }
+
   public YumEntriesHashCalculator entriesHashCalculator() {
     if (entriesHashCalculator == null) {
       entriesHashCalculator = new YumEntriesHashCalculator(mongoTemplate());
@@ -135,7 +146,7 @@ public class IntegrationTestContext extends MongoTestContext {
     if (metadataService == null) {
       entriesHashCalculator = new YumEntriesHashCalculator(mongoTemplate());
       metadataService = new MetadataService(gridFsService(), fileStorageService(), yumEntriesRepository(), repoMdGenerator(),
-        repoService(), repoCleaner(), entriesHashCalculator(), InApplicationMonitor.getInstance());
+        repoService(), repoCleaner(), entriesHashCalculator(), InApplicationMonitor.getInstance(), primaryXmlGenerator());
     }
     return metadataService;
   }

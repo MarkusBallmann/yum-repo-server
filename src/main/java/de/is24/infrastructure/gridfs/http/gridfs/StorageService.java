@@ -1,5 +1,38 @@
 package de.is24.infrastructure.gridfs.http.gridfs;
 
+import static ch.lambdaj.Lambda.on;
+import static de.is24.infrastructure.gridfs.http.domain.RepoType.SCHEDULED;
+import static de.is24.infrastructure.gridfs.http.domain.RepoType.STATIC;
+import static de.is24.infrastructure.gridfs.http.metadata.generation.DbGenerator.DB_VERSION;
+import static de.is24.infrastructure.gridfs.http.mongo.DatabaseStructure.SHA256_KEY;
+import static de.is24.infrastructure.gridfs.http.repos.RepositoryNameValidator.validateRepoName;
+import static de.is24.infrastructure.gridfs.http.security.Permission.PROPAGATE_FILE;
+import static de.is24.infrastructure.gridfs.http.security.Permission.PROPAGATE_REPO;
+import static java.nio.channels.Channels.newChannel;
+import static java.util.Collections.sort;
+import static org.apache.commons.lang.StringUtils.countMatches;
+import static org.apache.commons.lang.StringUtils.isBlank;
+import static org.apache.commons.lang.StringUtils.substringAfter;
+
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Date;
+import java.util.List;
+
+import org.bson.types.ObjectId;
+import org.freecompany.redline.ReadableChannelWrapper;
+import org.freecompany.redline.Scanner;
+import org.freecompany.redline.header.Header;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jmx.export.annotation.ManagedOperation;
+import org.springframework.jmx.export.annotation.ManagedResource;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.stereotype.Service;
+
 import ch.lambdaj.function.compare.ArgumentComparator;
 import de.is24.infrastructure.gridfs.http.domain.YumEntry;
 import de.is24.infrastructure.gridfs.http.domain.yum.YumPackage;
@@ -19,38 +52,6 @@ import de.is24.infrastructure.gridfs.http.storage.FileStorageItem;
 import de.is24.infrastructure.gridfs.http.storage.FileStorageService;
 import de.is24.infrastructure.gridfs.http.storage.UploadResult;
 import de.is24.util.monitoring.spring.TimeMeasurement;
-import org.bson.types.ObjectId;
-import org.freecompany.redline.ReadableChannelWrapper;
-import org.freecompany.redline.Scanner;
-import org.freecompany.redline.header.Header;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.jmx.export.annotation.ManagedOperation;
-import org.springframework.jmx.export.annotation.ManagedResource;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.stereotype.Service;
-
-import java.io.BufferedInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.Date;
-import java.util.List;
-
-import static ch.lambdaj.Lambda.on;
-import static de.is24.infrastructure.gridfs.http.domain.RepoType.SCHEDULED;
-import static de.is24.infrastructure.gridfs.http.domain.RepoType.STATIC;
-import static de.is24.infrastructure.gridfs.http.metadata.generation.DbGenerator.DB_VERSION;
-import static de.is24.infrastructure.gridfs.http.mongo.DatabaseStructure.SHA256_KEY;
-import static de.is24.infrastructure.gridfs.http.repos.RepositoryNameValidator.validateRepoName;
-import static de.is24.infrastructure.gridfs.http.security.Permission.PROPAGATE_FILE;
-import static de.is24.infrastructure.gridfs.http.security.Permission.PROPAGATE_REPO;
-import static java.nio.channels.Channels.newChannel;
-import static java.util.Collections.sort;
-import static org.apache.commons.lang.StringUtils.countMatches;
-import static org.apache.commons.lang.StringUtils.isBlank;
-import static org.apache.commons.lang.StringUtils.substringAfter;
 
 
 @ManagedResource
@@ -218,6 +219,14 @@ public class StorageService {
     UploadResult uploadResult = fileStorageService.storeSqliteFileCompressedWithChecksumName(reponame, metadataFile, name);
     return createRepoMdData(uploadResult);
   }
+
+  public Data storeRepodataXmlGz(String reponame, File xmlFile, String name) throws IOException {
+      validateRepoName(reponame);
+
+      UploadResult uploadResult = fileStorageService.storeXmlFileCompressedWithChecksumname(reponame, xmlFile, name);
+      return createRepoMdData(uploadResult);
+    }
+
 
   @TimeMeasurement
   public void deleteRepository(String reponame) {

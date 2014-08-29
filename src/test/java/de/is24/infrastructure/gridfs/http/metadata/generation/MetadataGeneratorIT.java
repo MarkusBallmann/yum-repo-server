@@ -1,29 +1,5 @@
 package de.is24.infrastructure.gridfs.http.metadata.generation;
 
-import de.is24.infrastructure.gridfs.http.category.LocalExecutionOnly;
-import de.is24.infrastructure.gridfs.http.mongo.IntegrationTestContext;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-
-import java.io.File;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
 import static de.is24.infrastructure.gridfs.http.utils.RepositoryUtils.uniqueRepoName;
 import static de.is24.infrastructure.gridfs.http.utils.RpmUtils.COMPLEX_RPM_FILE_NAME;
 import static de.is24.infrastructure.gridfs.http.utils.RpmUtils.COMPLEX_RPM_FILE_NAMES_WITHOUT_ROOT_DIR;
@@ -34,6 +10,28 @@ import static java.util.Arrays.asList;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.is;
+
+import java.io.File;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.BeforeClass;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+
+import de.is24.infrastructure.gridfs.http.category.LocalExecutionOnly;
+import de.is24.infrastructure.gridfs.http.mongo.IntegrationTestContext;
 
 @Category(LocalExecutionOnly.class)
 public class MetadataGeneratorIT {
@@ -55,7 +53,9 @@ public class MetadataGeneratorIT {
   public static IntegrationTestContext context = new IntegrationTestContext();
 
   private DbGenerator generator;
+  //private PrimaryXmlGenerator xmlgenerator;
   private File dbFile;
+  //private File xmlFile;
 
   @BeforeClass
   public static void beforeClass() {
@@ -68,6 +68,7 @@ public class MetadataGeneratorIT {
   @Before
   public void setUp() throws Exception {
     dbFile = createTempFile("db_file", "sqlite");
+    //xmlFile = createTempFile("xml_file", "xml");
   }
 
   @After
@@ -83,6 +84,7 @@ public class MetadataGeneratorIT {
     generator.createDb(dbFile, context.yumEntriesRepository().findByRepo(repoName));
     assertDb(dbFile, openSqLiteFile(VALID_PRIMARY_SQLITE), PRIMARY_IGNORED_COLUMNS);
   }
+
 
   @Test
   public void createFilelistsDB() throws Exception {

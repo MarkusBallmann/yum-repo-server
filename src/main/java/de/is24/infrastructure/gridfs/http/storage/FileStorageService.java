@@ -1,9 +1,7 @@
 package de.is24.infrastructure.gridfs.http.storage;
 
 
-import de.is24.infrastructure.gridfs.http.gridfs.BoundedGridFsResource;
-import de.is24.util.monitoring.spring.TimeMeasurement;
-import org.springframework.security.access.prepost.PreAuthorize;
+import static de.is24.infrastructure.gridfs.http.security.Permission.HAS_DESCRIPTOR_READ_PERMISSION;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,7 +9,10 @@ import java.io.InputStream;
 import java.util.Date;
 import java.util.List;
 
-import static de.is24.infrastructure.gridfs.http.security.Permission.HAS_DESCRIPTOR_READ_PERMISSION;
+import org.springframework.security.access.prepost.PreAuthorize;
+
+import de.is24.infrastructure.gridfs.http.gridfs.BoundedGridFsResource;
+import de.is24.util.monitoring.spring.TimeMeasurement;
 
 public interface FileStorageService {
   public FileStorageItem findById(Object id);
@@ -38,6 +39,8 @@ public interface FileStorageService {
   public FileStorageItem storeFile(InputStream inputStream, FileDescriptor descriptor, boolean allowOverride);
 
   public UploadResult storeSqliteFileCompressedWithChecksumName(String reponame, File metadataFile, String name) throws IOException;
+
+  public UploadResult storeXmlFileCompressedWithChecksumname(String reponame, File xmlFile, String name) throws IOException;
 
   public List<FileStorageItem> getAllRpms();
 

@@ -1,19 +1,5 @@
 package de.is24.infrastructure.gridfs.http.metadata;
 
-import de.is24.infrastructure.gridfs.http.category.LocalExecutionOnly;
-import de.is24.infrastructure.gridfs.http.domain.RepoEntry;
-import de.is24.infrastructure.gridfs.http.mongo.IntegrationTestContext;
-import de.is24.infrastructure.gridfs.http.storage.FileDescriptor;
-import de.is24.infrastructure.gridfs.http.storage.FileStorageItem;
-import org.junit.Before;
-import org.junit.ClassRule;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-
-import java.io.IOException;
-import java.util.Date;
-import java.util.List;
-
 import static de.is24.infrastructure.gridfs.http.utils.RepositoryUtils.uniqueRepoName;
 import static de.is24.infrastructure.gridfs.http.utils.RpmUtils.COMPLEX_RPM_FILE_NAME;
 import static de.is24.infrastructure.gridfs.http.utils.RpmUtils.streamOf;
@@ -27,6 +13,21 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+
+import java.io.IOException;
+import java.util.Date;
+import java.util.List;
+
+import org.junit.Before;
+import org.junit.ClassRule;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+
+import de.is24.infrastructure.gridfs.http.category.LocalExecutionOnly;
+import de.is24.infrastructure.gridfs.http.domain.RepoEntry;
+import de.is24.infrastructure.gridfs.http.mongo.IntegrationTestContext;
+import de.is24.infrastructure.gridfs.http.storage.FileDescriptor;
+import de.is24.infrastructure.gridfs.http.storage.FileStorageItem;
 
 
 @Category(LocalExecutionOnly.class)
@@ -122,8 +123,21 @@ public class MetadataServiceIT {
 
   private void assertDbFile(String type) {
     FileStorageItem dbFile = context.fileStorageService().findByPrefix(reponame + "/repodata/" + type).get(0);
+    if(type=="primary"){
+        FileStorageItem dbFile2 = context.fileStorageService().findByPrefix(reponame + "/repodata/" + type).get(1);
+        String sha256dbFile2 = dbFile2.getChecksumSha256();
+        if (dbFile2.getFilename().endsWith("xml.gz")){
+            assertThat(dbFile2.getFilename(), endsWith(type + "-" + sha256dbFile2 + ".xml.gz"));
+        }else{
+            assertThat(dbFile2.getFilename(), endsWith(type + "-" + sha256dbFile2 + ".sqlite.bz2"));
+        }
+    }
     String sha256 = dbFile.getChecksumSha256();
-    assertThat(dbFile.getFilename(), endsWith(type + "-" + sha256 + ".sqlite.bz2"));
+    if (dbFile.getFilename().endsWith("xml.gz")){
+        assertThat(dbFile.getFilename(), endsWith(type + "-" + sha256 + ".xml.gz"));
+    }else{
+        assertThat(dbFile.getFilename(), endsWith(type + "-" + sha256 + ".sqlite.bz2"));
+    }
     assertFalse(dbFile.isMarkedAsDeleted());
   }
 
