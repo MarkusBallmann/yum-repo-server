@@ -41,6 +41,7 @@ import java.util.Date;
 import java.util.List;
 
 import org.apache.commons.compress.compressors.bzip2.BZip2CompressorOutputStream;
+import org.apache.commons.compress.compressors.gzip.GzipCompressorOutputStream;
 import org.bson.types.ObjectId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -235,10 +236,10 @@ public class GridFsFileStorageService implements FileStorageService {
           OutputStream gridFsOutputStream = inputFile.getOutputStream();
           compressedDigestOutputStream = new DigestOutputStream(gridFsOutputStream, getSha256Digest());
 
-          BZip2CompressorOutputStream bzip2OutputStream = new BZip2CompressorOutputStream(compressedDigestOutputStream);
+          GzipCompressorOutputStream  gzip2OutputStream = new GzipCompressorOutputStream(compressedDigestOutputStream);
 
-          copy(uncompressedDigestInputStream, bzip2OutputStream);
-          bzip2OutputStream.close();
+          copy(uncompressedDigestInputStream, gzip2OutputStream);
+          gzip2OutputStream.close();
         } finally {
           uncompressedDigestInputStream.close();
         }

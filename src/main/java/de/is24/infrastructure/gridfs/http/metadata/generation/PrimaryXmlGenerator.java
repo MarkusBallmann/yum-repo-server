@@ -20,12 +20,10 @@ import de.is24.infrastructure.gridfs.http.jaxb.primary.XmlYumPackage;
 import de.is24.infrastructure.gridfs.http.storage.FileStorageService;
 
 @Service
-public class PrimaryXmlGenerator
-{
-
+public class PrimaryXmlGenerator {
     public static final int INITIAL_BUFFER_SIZE = 4 * 1024;
     private final FileStorageService fileStorageService;
-    private String name;
+    private final String name ="primary";
 
     /* for cglib */
     protected PrimaryXmlGenerator() {
@@ -38,9 +36,8 @@ public class PrimaryXmlGenerator
     }
 
     @Autowired
-    public PrimaryXmlGenerator(FileStorageService fileStorageService, String name) {
+    public PrimaryXmlGenerator(FileStorageService fileStorageService) {
       this.fileStorageService = fileStorageService;
-      this.name = name;
     }
 
     public void generatePrimaryXml(File xmlFile, String reponame, XmlYumMetadata metadata, List<XmlYumPackage> xmlPkgList) {

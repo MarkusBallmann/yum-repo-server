@@ -130,7 +130,7 @@ public class IntegrationTestContext extends MongoTestContext {
 
   public PrimaryXmlGenerator primaryXmlGenerator(){
       if (primaryXmlGenerator == null){
-          primaryXmlGenerator = new PrimaryXmlGenerator(fileStorageService(),"primary");
+          primaryXmlGenerator = new PrimaryXmlGenerator(fileStorageService());
       }
       return primaryXmlGenerator;
   }

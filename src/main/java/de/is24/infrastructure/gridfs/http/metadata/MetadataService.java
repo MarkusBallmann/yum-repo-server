@@ -188,7 +188,7 @@ public class MetadataService {
       try {
           primaryXmlGenerator.generatePrimaryXml(xmlFile,reponame, metadata, xmlPkgList);
           Data data = storageService.storeRepodataXmlGz(reponame, xmlFile, "primary");
-          data.setType("primary_xml");
+          data.setType("primary");
           return data;
       } finally {
           xmlFile.delete();
